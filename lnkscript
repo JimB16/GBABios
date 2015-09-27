@@ -1,0 +1,76 @@
+/* Linker Script Original v1.3 by Jeff Frohwein     */
+/*  v1.0 - Original release                         */
+/*  v1.1 - Added proper .data section support       */
+/*  v1.2 - Added support for c++ & iwram overlays   */
+/*       - Major contributions by Jason Wilkins.    */
+/*  v1.3 - .ewram section now can be used when      */
+/*         compiling for MULTIBOOT mode. This fixes */
+/*         malloc() in DevKitAdvance which depends  */
+/*         on __eheap_start instead of end to define*/
+/*         the starting location of heap space.     */
+/*         External global variable __gba_iwram_heap*/
+/*         support added to allow labels end, _end, */
+/*         & __end__ to point to end of iwram or    */
+/*         the end of ewram.                        */
+/*	Additions by WinterMute							*/
+/* v1.4 -	.sbss section added for unitialised		*/
+/*		    data in ewram 							*/
+/* v1.5 -	padding section added to stop EZF 		*/
+/*		    stripping important data				*/
+/* v1.6 -	added memory sections			 		*/
+
+/* This file is released into the public domain		*/
+/* for commercial or non-commercial use with no		*/
+/* restrictions placed upon it.						*/
+
+/* NOTE!!!: This linker script defines the RAM &  */
+/*   ROM start addresses. In order for it to work */
+/*   properly, remove -Ttext and -Tbss linker     */
+/*   options from your makefile if they are       */
+/*   present.                                     */
+
+/* You can use the following to view section      */
+/* addresses in your .elf file:                   */
+/*   objdump -h file.elf                          */
+/* Please note that empty sections may incorrectly*/
+/* list the lma address as the vma address for    */
+/* some versions of objdump.                      */
+
+OUTPUT_FORMAT("elf32-littlearm", "elf32-bigarm", "elf32-littlearm")
+OUTPUT_ARCH(arm)
+ENTRY(_start)
+
+MEMORY {
+
+	rom		: ORIGIN = 0x00000000, LENGTH = 0x4000
+	iwram	: ORIGIN = 0x03000000, LENGTH = 32K
+	ewram	: ORIGIN = 0x02000000, LENGTH = 256K
+
+	prog_start : ORIGIN = 0x00000000, LENGTH = 0x4000
+}
+
+
+SECTIONS
+{
+.text : {
+	_start_text = .;
+	/* Executable code */
+	*(.text)
+	*(.gnu.warning)
+	*(.gnu.linkonce.t*)
+	*(.glue_7)
+	*(.glue_7t)
+	_end_text = .;
+} > prog_start
+.data ALIGN(64) : {
+	_start_data = .;
+	*(.data)
+	_end_data = .;
+} > prog_start
+.bss : {
+	_start_bss = .;
+	*(.bss)
+	*(COMMON)
+	_end_bss = .;
+} > prog_start
+_end_prog = ALIGN(64);}
